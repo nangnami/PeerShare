@@ -20,6 +20,8 @@ namespace PeerShare
         private RichTextBox descriptionRichTextBox;
         private Button browseButton;
         private Label selectedFileLabel;
+        private ListBox selectedFilesListBox;
+        private Button removeFileButton;
         private Button uploadButton;
         private PictureBox flowerPictureBox;
 
@@ -47,6 +49,8 @@ namespace PeerShare
             this.descriptionRichTextBox = new RichTextBox();
             this.browseButton = new Button();
             this.selectedFileLabel = new Label();
+            this.selectedFilesListBox = new ListBox();
+            this.removeFileButton = new Button();
             this.uploadButton = new Button();
 
             this.SuspendLayout();
@@ -73,6 +77,8 @@ namespace PeerShare
             this.uploadPagePanel.Controls.Add(this.descriptionRichTextBox);
             this.uploadPagePanel.Controls.Add(this.browseButton);
             this.uploadPagePanel.Controls.Add(this.selectedFileLabel);
+            this.uploadPagePanel.Controls.Add(this.selectedFilesListBox);
+            this.uploadPagePanel.Controls.Add(this.removeFileButton);
             this.uploadPagePanel.Controls.Add(this.uploadButton);
 
             // TITLE
@@ -135,14 +141,14 @@ namespace PeerShare
 
             // DESCRIPTION TEXTBOX
             this.descriptionRichTextBox.Location = new Point(35, 275);
-            this.descriptionRichTextBox.Size = new Size(575, 75);
+            this.descriptionRichTextBox.Size = new Size(575, 55);
             this.descriptionRichTextBox.Font = new Font("Segoe UI", 9F);
             this.descriptionRichTextBox.BorderStyle = BorderStyle.FixedSingle;
 
             // BROWSE BUTTON
-            this.browseButton.Location = new Point(35, 375);
+            this.browseButton.Location = new Point(35, 345);
             this.browseButton.Size = new Size(130, 35);
-            this.browseButton.Text = "Browse File";
+            this.browseButton.Text = "Browse Files";
             this.browseButton.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             this.browseButton.BackColor = Color.FromArgb(255, 207, 200);
             this.browseButton.ForeColor = Color.FromArgb(125, 55, 85);
@@ -151,15 +157,28 @@ namespace PeerShare
             this.browseButton.Cursor = Cursors.Hand;
 
             // SELECTED FILE LABEL
-            this.selectedFileLabel.Location = new Point(180, 383);
+            this.selectedFileLabel.Location = new Point(180, 350);
             this.selectedFileLabel.Size = new Size(420, 25);
-            this.selectedFileLabel.Text = "No file selected";
+            this.selectedFileLabel.Text = "No files selected";
             this.selectedFileLabel.Font = new Font("Segoe UI", 8.5F);
             this.selectedFileLabel.ForeColor = Color.FromArgb(145, 128, 145);
             this.selectedFileLabel.TextAlign = ContentAlignment.MiddleLeft;
 
+            this.selectedFilesListBox.Location = new Point(35, 390);
+            this.selectedFilesListBox.Size = new Size(575, 75);
+            this.selectedFilesListBox.Font = new Font("Segoe UI", 9F);
+            this.selectedFilesListBox.HorizontalScrollbar = true;
+            this.selectedFilesListBox.SelectionMode = SelectionMode.MultiExtended;
+            this.removeFileButton.Location = new Point(35, 475);
+            this.removeFileButton.Size = new Size(160, 42);
+            this.removeFileButton.Text = "Remove Selected";
+            this.removeFileButton.BackColor = Color.FromArgb(255, 207, 200);
+            this.removeFileButton.ForeColor = Color.FromArgb(125, 55, 85);
+            this.removeFileButton.FlatStyle = FlatStyle.Flat;
+            this.removeFileButton.FlatAppearance.BorderSize = 0;
+
             // UPLOAD BUTTON
-            this.uploadButton.Location = new Point(420, 450);
+            this.uploadButton.Location = new Point(420, 475);
             this.uploadButton.Size = new Size(190, 42);
             this.uploadButton.Text = "Upload Resource";
             this.uploadButton.Font = new Font("Segoe UI", 9F, FontStyle.Bold);

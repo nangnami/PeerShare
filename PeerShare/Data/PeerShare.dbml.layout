@@ -2,11 +2,57 @@
 <ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 11, 8.5" name="PeerShare">
   <DataContextMoniker Name="/PeerShareDataContext" />
   <nestedChildShapes>
-    <classShape Id="e1fbb4a1-67bf-4aa7-9256-95a72df91c14" absoluteBounds="0.5, 0.875, 2, 1.7708968098958331">
+    <classShape Id="e1fbb4a1-67bf-4aa7-9256-95a72df91c14" absoluteBounds="0.875, 0.5, 2, 1.7708968098958331">
       <DataClassMoniker Name="/PeerShareDataContext/User" />
       <nestedChildShapes>
-        <elementListCompartment Id="ea72cca1-5efa-4345-ad40-f9ca8ea43eef" absoluteBounds="0.51500000000000012, 1.335, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="ea72cca1-5efa-4345-ad40-f9ca8ea43eef" absoluteBounds="0.89000000000000012, 0.96, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
+    <classShape Id="267ccc3f-9557-4ce4-9075-584c18288b85" absoluteBounds="4.5, 0.5, 2, 1.3862939453125">
+      <DataClassMoniker Name="/PeerShareDataContext/Subject" />
+      <nestedChildShapes>
+        <elementListCompartment Id="45c46ec0-3215-4279-b7cf-b5ef68f5f526" absoluteBounds="4.5150000000000006, 0.96, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="762165c1-4d7d-47b4-993a-fd20afcfb4be" absoluteBounds="3.5, 2.625, 2, 2.9247054036458331">
+      <DataClassMoniker Name="/PeerShareDataContext/Resource" />
+      <nestedChildShapes>
+        <elementListCompartment Id="c3cb6811-6972-4886-8425-31d9feb79be0" absoluteBounds="3.515, 3.085, 1.9700000000000002, 2.364705403645833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(5 : 1.8862939453125); (5 : 2.625)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+      <AssociationMoniker Name="/PeerShareDataContext/Subject/Subject_Resource" />
+      <nodes>
+        <classShapeMoniker Id="267ccc3f-9557-4ce4-9075-584c18288b85" />
+        <classShapeMoniker Id="762165c1-4d7d-47b4-993a-fd20afcfb4be" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(2.875 : 2.10984537760417); (3.96875 : 2.10984537760417); (3.96875 : 2.625)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+      <AssociationMoniker Name="/PeerShareDataContext/User/User_Resource" />
+      <nodes>
+        <classShapeMoniker Id="e1fbb4a1-67bf-4aa7-9256-95a72df91c14" />
+        <classShapeMoniker Id="762165c1-4d7d-47b4-993a-fd20afcfb4be" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="8bb48f3f-b665-4e46-8932-0654f5cd3d29" absoluteBounds="0.5, 3.75, 2, 1.5785953776041666">
+      <DataClassMoniker Name="/PeerShareDataContext/Download" />
+      <nestedChildShapes>
+        <elementListCompartment Id="86f3dcfa-c9f7-4320-81be-faecd3f15575" absoluteBounds="0.515, 4.21, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(3.5 : 4.53929768880208); (2.5 : 4.53929768880208)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+      <AssociationMoniker Name="/PeerShareDataContext/Resource/Resource_Download" />
+      <nodes>
+        <classShapeMoniker Id="762165c1-4d7d-47b4-993a-fd20afcfb4be" />
+        <classShapeMoniker Id="8bb48f3f-b665-4e46-8932-0654f5cd3d29" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(1.6875 : 2.27089680989583); (1.6875 : 3.75)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+      <AssociationMoniker Name="/PeerShareDataContext/User/User_Download" />
+      <nodes>
+        <classShapeMoniker Id="e1fbb4a1-67bf-4aa7-9256-95a72df91c14" />
+        <classShapeMoniker Id="8bb48f3f-b665-4e46-8932-0654f5cd3d29" />
+      </nodes>
+    </associationConnector>
   </nestedChildShapes>
 </ordesignerObjectsDiagram>

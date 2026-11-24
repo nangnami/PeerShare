@@ -4,6 +4,8 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using PeerShare.Services;
+using System.Data.SqlClient;
 
 namespace PeerShare
 {
@@ -115,6 +117,7 @@ namespace PeerShare
         // CREATE ACCOUNT BUTTON
         // ==========================================
 
+
         private void signupButton_Click(object sender, EventArgs e)
         {
             string email = emailTextBox.Text.Trim();
@@ -137,25 +140,61 @@ namespace PeerShare
                 return;
             }
 
-            if (password != confirmPassword)
+            try
             {
-                MessageBox.Show(
-                    "Passwords do not match.",
-                    "Signup Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
+                string result = AuthService.Register(
+                    username,
+                    email,
+                    password,
+                    confirmPassword
                 );
 
-                return;
-            }
+                if (result == "SUCCESS")
+                {
+                    MessageBox.Show(
+                        "Account created successfully! You may now log in.",
+                        "Signup Successful",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information
+                    );
 
-            MessageBox.Show(
-                "Signup form completed successfully!",
-                "PeerShare",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
+                    emailTextBox.Clear();
+                    usernameTextBox.Clear();
+                    passwordTextBox.Clear();
+                    confirmPasswordTextBox.Clear();
+
+                    loginLink_Click(sender, e);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        result,
+                        "Signup Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                    );
+                }
+            }
+            catch (SqlException)
+            {
+                MessageBox.Show(
+                    "Unable to connect to the database or save your account.",
+                    "Database Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(
+                    "An unexpected error occurred during signup.",
+                    "System Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
         }
+
 
         // ==========================================
         // BACK TO LOGIN

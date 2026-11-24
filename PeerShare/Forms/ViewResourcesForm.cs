@@ -7,6 +7,7 @@ using System.Linq;
 using System.Windows.Forms;
 using System.ComponentModel;
 using System.Drawing.Drawing2D;
+using PeerShare.Services;
 
 namespace PeerShare
 {
@@ -40,70 +41,62 @@ namespace PeerShare
 
             this.BackColor = Color.Transparent;
 
-            LoadSampleResources();
+            LoadSubjects();
+            LoadResources();
             ConnectEvents();
             DisplayResources(resourcesData);
         }
 
-        // ==========================================
-        // 2. LOAD SAMPLE RESOURCES
-        // ==========================================
 
-        private void LoadSampleResources()
+        private void LoadResources()
         {
-            // Format:
-            // Title, Subject, Uploader, Date, Description, File Path
-
-            resourcesData.Add(new string[]
+            try
             {
-                "Introduction to C# Programming",
-                "Programming",
-                "Maria Santos",
-                "November 20, 2026",
-                "A beginner-friendly guide to C# fundamentals.",
-                ""
-            });
-
-            resourcesData.Add(new string[]
+                resourcesData =
+                    ResourceService.GetAvailableResources();
+            }
+            catch (Exception ex)
             {
-                "Database Normalization Notes",
-                "Database Management",
-                "John Reyes",
-                "November 19, 2026",
-                "Study notes covering 1NF, 2NF, and 3NF.",
-                ""
-            });
+                resourcesData.Clear();
 
-            resourcesData.Add(new string[]
-            {
-                "Computer Networks Reviewer",
-                "Networking",
-                "Angela Cruz",
-                "November 18, 2026",
-                "A reviewer covering network concepts and protocols.",
-                ""
-            });
-
-            resourcesData.Add(new string[]
-            {
-                "HTML and CSS Fundamentals",
-                "Web Development",
-                "Mark Dela Torre",
-                "November 17, 2026",
-                "Learning materials for basic website development.",
-                ""
-            });
-
-            resourcesData.Add(new string[]
-            {
-                "Information Systems Overview",
-                "Information Management",
-                "Sofia Garcia",
-                "November 15, 2026",
-                "An overview of information systems and their components.",
-                ""
-            });
+                MessageBox.Show(
+                    "Unable to load resources: " + ex.Message,
+                    "Database Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
+
+        private void LoadSubjects()
+        {
+            try
+            {
+                resourcesSubjectComboBox.DataSource = null;
+                resourcesSubjectComboBox.Items.Clear();
+
+                resourcesSubjectComboBox.Items.Add("All Subjects");
+
+                foreach (var subject in ResourceService.GetSubjects())
+                {
+                    resourcesSubjectComboBox.Items.Add(
+                        subject.SubjectName);
+                }
+
+                resourcesSubjectComboBox.DropDownStyle =
+                    ComboBoxStyle.DropDownList;
+
+                resourcesSubjectComboBox.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Unable to load subjects: " + ex.Message,
+                    "Database Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
 
         // ==========================================
         // 3. CONNECT EVENTS
@@ -123,7 +116,24 @@ namespace PeerShare
 
         private void DisplayResources(List<string[]> resources)
         {
-            resourcesFlowPanel.Controls.Clear();
+            while (resourcesFlowPanel.Controls.Count > 0)
+            {
+                resourcesFlowPanel.Controls[0].Dispose();
+            }
+
+            if (resources.Count == 0)
+            {
+                Label emptyLabel = new Label
+                {
+                    Text = "No resources found.",
+                    AutoSize = true,
+                    Font = new Font("Segoe UI", 11F),
+                    ForeColor = Color.Gray,
+                    Margin = new Padding(20)
+                };
+
+                resourcesFlowPanel.Controls.Add(emptyLabel);
+            }
 
             foreach (string[] resource in resources)
             {
@@ -176,8 +186,8 @@ namespace PeerShare
                 Button detailsButton = new Button();
 
                 detailsButton.Text = "Details";
-                detailsButton.Size = new Size(85, 30);
-                detailsButton.Location = new Point(445, 15);
+                detailsButton.Size = new Size(85, 28);
+                detailsButton.Location = new Point(445, 6);
                 detailsButton.BackColor = Color.FromArgb(235, 222, 250);
                 detailsButton.ForeColor = Color.FromArgb(105, 76, 130);
                 detailsButton.FlatStyle = FlatStyle.Flat;
@@ -194,8 +204,8 @@ namespace PeerShare
                 Button downloadButton = new Button();
 
                 downloadButton.Text = "Download";
-                downloadButton.Size = new Size(85, 30);
-                downloadButton.Location = new Point(445, 57);
+                downloadButton.Size = new Size(85, 28);
+                downloadButton.Location = new Point(445, 78);
                 downloadButton.BackColor = Color.FromArgb(255, 207, 200);
                 downloadButton.ForeColor = Color.FromArgb(125, 55, 85);
                 downloadButton.FlatStyle = FlatStyle.Flat;
@@ -207,6 +217,23 @@ namespace PeerShare
                 ApplyRoundedCorners(downloadButton, 10);
 
                 downloadButton.Click += downloadButton_Click;
+
+                Button previewButton = new Button
+                {
+                    Text = "Preview",
+                    Size = new Size(85, 28),
+                    Location = new Point(445, 42),
+                    BackColor = Color.FromArgb(235, 222, 250),
+                    ForeColor = Color.FromArgb(105, 76, 130),
+                    FlatStyle = FlatStyle.Flat,
+                    Font = new Font("Segoe UI", 8F, FontStyle.Bold),
+                    Cursor = Cursors.Hand,
+                    Tag = resource
+                };
+                previewButton.FlatAppearance.BorderSize = 0;
+                ApplyRoundedCorners(previewButton, 10);
+                previewButton.Click += previewButton_Click;
+                card.Controls.Add(previewButton);
 
                 // ADD CONTROLS TO CARD
                 card.Controls.Add(titleLabel);
@@ -227,10 +254,11 @@ namespace PeerShare
         // 5. SEARCH AND FILTER
         // ==========================================
 
+
         private void FilterResources()
         {
             string searchText =
-                resourcesSearchTextBox.Text.Trim().ToLower();
+                resourcesSearchTextBox.Text.Trim().ToLowerInvariant();
 
             string selectedSubject =
                 resourcesSubjectComboBox.SelectedItem == null
@@ -239,15 +267,19 @@ namespace PeerShare
 
             List<string[]> filteredResources = resourcesData
                 .Where(resource =>
-                    (resource[0].ToLower().Contains(searchText) ||
-                     resource[1].ToLower().Contains(searchText) ||
-                     resource[2].ToLower().Contains(searchText)) &&
+                    (resource[0].ToLowerInvariant().Contains(searchText) ||
+                     resource[1].ToLowerInvariant().Contains(searchText) ||
+                     resource[2].ToLowerInvariant().Contains(searchText) ||
+                     resource[4].ToLowerInvariant().Contains(searchText) ||
+                     resource[6].ToLowerInvariant().Contains(searchText))
+                    &&
                     (selectedSubject == "All Subjects" ||
                      resource[1] == selectedSubject))
                 .ToList();
 
             DisplayResources(filteredResources);
         }
+
 
         private void resourcesSearchTextBox_TextChanged(
             object sender, EventArgs e)
@@ -285,54 +317,102 @@ namespace PeerShare
         // 7. DOWNLOAD RESOURCE
         // ==========================================
 
+
         private void downloadButton_Click(object sender, EventArgs e)
         {
             Button clickedButton = sender as Button;
+
+            if (clickedButton == null)
+                return;
+
             string[] resource = clickedButton.Tag as string[];
 
-            string filePath = resource[5];
-
-            if (string.IsNullOrWhiteSpace(filePath) ||
-                !File.Exists(filePath))
-            {
-                MessageBox.Show(
-                    "This resource does not have an attached file yet.",
-                    "File Not Available",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-
+            if (resource == null)
                 return;
-            }
+
+            int resourceId = int.Parse(resource[5]);
+            string fileName = resource[6];
 
             using (SaveFileDialog saveDialog = new SaveFileDialog())
             {
                 saveDialog.Title = "Download Resource";
-                saveDialog.FileName = Path.GetFileName(filePath);
+                saveDialog.FileName = Path.GetFileName(fileName);
                 saveDialog.Filter = "All Files (*.*)|*.*";
+                saveDialog.OverwritePrompt = true;
 
-                if (saveDialog.ShowDialog() == DialogResult.OK)
+                if (saveDialog.ShowDialog() != DialogResult.OK)
+                    return;
+
+                try
                 {
+                    clickedButton.Enabled = false;
+
+                    byte[] fileBytes =
+                        ResourceService.GetResourceFile(resourceId);
+
+                    File.WriteAllBytes(
+                        saveDialog.FileName,
+                        fileBytes);
+
                     try
                     {
-                        File.Copy(filePath, saveDialog.FileName, true);
-
-                        MessageBox.Show(
-                            "Resource downloaded successfully!",
-                            "Download Complete",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Information);
+                        ResourceService.RecordDownload(resourceId);
                     }
                     catch (Exception ex)
                     {
                         MessageBox.Show(
-                            "Unable to download the resource.\n\n" + ex.Message,
-                            "Download Error",
+                            "File saved, but download history could not be recorded."
+                            + "\n\n" + ex.Message,
+                            "Download History",
                             MessageBoxButtons.OK,
-                            MessageBoxIcon.Error);
+                            MessageBoxIcon.Warning);
+
+                        return;
                     }
+
+                    MessageBox.Show(
+                        "Resource downloaded successfully!",
+                        "Download Complete",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "Unable to download the resource.\n\n"
+                        + ex.Message,
+                        "Download Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    clickedButton.Enabled = true;
                 }
             }
         }
+
+        private void previewButton_Click(object sender, EventArgs e)
+        {
+            Button button = sender as Button;
+            string[] resource = button == null ? null : button.Tag as string[];
+            if (resource == null) return;
+
+            try
+            {
+                button.Enabled = false;
+                byte[] bytes = ResourceService.GetResourceFile(int.Parse(resource[5]));
+                using (var preview = new ResourcePreviewForm(resource[6], bytes))
+                    preview.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Unable to preview the resource: " + ex.Message,
+                    "Preview Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally { button.Enabled = true; }
+        }
+
         // ROUNDED CORNERS HELPER
         private void ApplyRoundedCorners(Control control, int radius)
         {

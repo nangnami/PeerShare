@@ -1,177 +1,132 @@
 ﻿using System;
-using System.Drawing;
-using System.IO;
-using System.Windows.Forms;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
+using System.Linq;
+using System.Windows.Forms;
+using PeerShare.Services;
 
 namespace PeerShare
 {
     public partial class UploadForm : Form
     {
-        // ==========================================
-        // 1 - VARIABLES
-        // ==========================================
-
-        private string selectedFilePath = "";
+        private readonly List<string> selectedFilePaths = new List<string>();
 
         public UploadForm()
         {
             InitializeComponent();
-
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime) return;
             flowerPictureBox.Image = Image.FromFile(
-                Application.StartupPath + @"\Assets\flower.png"
-            );
-
-            if (LicenseManager.UsageMode != LicenseUsageMode.Designtime)
-            {
-                ApplyRoundedCorners(uploadPagePanel, 20);
-                ApplyRoundedCorners(uploadButton, 12);
-            }
-
-            this.DoubleBuffered = true;
-
-            this.SetStyle(
-                ControlStyles.SupportsTransparentBackColor, true
-            );
-
-            this.BackColor = Color.Transparent;
-
-            ConnectEvents();
-        }
-
-        // ==========================================
-        // 2 - CONNECT EVENTS
-        // ==========================================
-
-        private void ConnectEvents()
-        {
+                Path.Combine(Application.StartupPath, "Assets", "flower.png"));
+            ApplyRoundedCorners(uploadPagePanel, 20);
+            ApplyRoundedCorners(uploadButton, 12);
+            DoubleBuffered = true;
+            SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+            BackColor = Color.Transparent;
             browseButton.Click += browseButton_Click;
             uploadButton.Click += uploadButton_Click;
+            removeFileButton.Click += removeFileButton_Click;
+            Load += (sender, e) => LoadSubjects();
+            RefreshSelectedFiles();
         }
 
-        // ==========================================
-        // 3 - BROWSE FILE
-        // ==========================================
+        private void LoadSubjects()
+        {
+            try
+            {
+                subjectComboBox.DisplayMember = "SubjectName";
+                subjectComboBox.ValueMember = "SubjectId";
+                subjectComboBox.DataSource = ResourceService.GetSubjects();
+                subjectComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+                subjectComboBox.SelectedIndex = -1;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Unable to load subjects: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
         private void browseButton_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            using (var dialog = new OpenFileDialog())
             {
-                openFileDialog.Title = "Select a Learning Resource";
-
-                openFileDialog.Filter =
-                    "Supported Files|*.pdf;*.doc;*.docx;*.ppt;*.pptx";
-
-                openFileDialog.Multiselect = false;
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    selectedFilePath = openFileDialog.FileName;
-
-                    selectedFileLabel.Text =
-                        Path.GetFileName(selectedFilePath);
-
-                    selectedFileLabel.ForeColor =
-                        Color.FromArgb(125, 55, 85);
-                }
+                dialog.Title = "Select Learning Resources";
+                dialog.Filter = "Supported Files|*.pdf;*.doc;*.docx;*.ppt;*.pptx";
+                dialog.Multiselect = true;
+                if (dialog.ShowDialog(this) != DialogResult.OK) return;
+                foreach (string path in dialog.FileNames)
+                    if (!selectedFilePaths.Contains(path, StringComparer.OrdinalIgnoreCase))
+                        selectedFilePaths.Add(path);
+                RefreshSelectedFiles();
             }
         }
 
-        // ==========================================
-        // 4 - UPLOAD RESOURCE
-        // Temporary message until backend integration.
-        // ==========================================
+        private void removeFileButton_Click(object sender, EventArgs e)
+        {
+            foreach (int index in selectedFilesListBox.SelectedIndices.Cast<int>()
+                .OrderByDescending(i => i).ToArray())
+                selectedFilePaths.RemoveAt(index);
+            RefreshSelectedFiles();
+        }
+
+        private void RefreshSelectedFiles()
+        {
+            selectedFilesListBox.Items.Clear();
+            foreach (string path in selectedFilePaths)
+                selectedFilesListBox.Items.Add(Path.GetFileName(path));
+            int count = selectedFilePaths.Count;
+            selectedFileLabel.Text = count == 0 ? "No files selected" : count + " file(s) selected";
+            selectedFileLabel.ForeColor = count == 0 ? Color.Gray : Color.FromArgb(125, 55, 85);
+            uploadButton.Text = count == 0 ? "Upload Resources" : "Upload " + count + " File(s)";
+            removeFileButton.Enabled = count > 0;
+        }
 
         private void uploadButton_Click(object sender, EventArgs e)
         {
-            string resourceTitle = resourceTitleTextBox.Text.Trim();
-            string subject = subjectComboBox.Text;
+            string title = resourceTitleTextBox.Text.Trim();
             string description = descriptionRichTextBox.Text.Trim();
-
-            if (string.IsNullOrWhiteSpace(resourceTitle))
+            if (title.Length == 0) { MessageBox.Show("Please enter the resource title."); return; }
+            if (!(subjectComboBox.SelectedValue is int)) { MessageBox.Show("Please select a subject."); return; }
+            if (description.Length == 0) { MessageBox.Show("Please enter a description."); return; }
+            if (selectedFilePaths.Count == 0) { MessageBox.Show("Please select files to upload."); return; }
+            int subjectId = (int)subjectComboBox.SelectedValue;
+            string[] paths = selectedFilePaths.ToArray();
+            try
             {
-                MessageBox.Show(
-                    "Please enter the resource title.",
-                    "Missing Information",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                resourceTitleTextBox.Focus();
-                return;
+                uploadPagePanel.Enabled = false;
+                string result = ResourceService.UploadResources(title, subjectId, description, paths);
+                if (result == "SUCCESS")
+                {
+                    MessageBox.Show(paths.Length + " file(s) uploaded successfully!", "Upload Successful",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    resourceTitleTextBox.Clear();
+                    descriptionRichTextBox.Clear();
+                    subjectComboBox.SelectedIndex = -1;
+                    selectedFilePaths.Clear();
+                    RefreshSelectedFiles();
+                }
+                else MessageBox.Show(result, "Upload Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-
-            if (string.IsNullOrWhiteSpace(subject))
+            catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Please select a subject.",
-                    "Missing Information",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                subjectComboBox.Focus();
-                return;
+                MessageBox.Show("Upload failed: " + ex.Message, "Upload Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            if (string.IsNullOrWhiteSpace(description))
-            {
-                MessageBox.Show(
-                    "Please enter a description.",
-                    "Missing Information",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                descriptionRichTextBox.Focus();
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(selectedFilePath))
-            {
-                MessageBox.Show(
-                    "Please select a file to upload.",
-                    "No File Selected",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                return;
-            }
-
-            MessageBox.Show(
-                "Resource information validated successfully!\n\n" +
-                "Title: " + resourceTitle +
-                "\nSubject: " + subject +
-                "\nFile: " + Path.GetFileName(selectedFilePath) +
-                "\n\nActual uploading will be available after backend integration.",
-                "Upload Ready",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
+            finally { uploadPagePanel.Enabled = true; }
         }
 
-        // ROUNDED CORNERS HELPER
         private void ApplyRoundedCorners(Control control, int radius)
         {
-            using (GraphicsPath path = new GraphicsPath())
+            using (var path = new GraphicsPath())
             {
-                int diameter = radius * 2;
-
-                Rectangle bounds = new Rectangle(
-                    0, 0,
-                    control.Width,
-                    control.Height
-                );
-
-                path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
-                path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
-                path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
-                path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-
+                int d = radius * 2;
+                path.AddArc(0, 0, d, d, 180, 90);
+                path.AddArc(control.Width - d, 0, d, d, 270, 90);
+                path.AddArc(control.Width - d, control.Height - d, d, d, 0, 90);
+                path.AddArc(0, control.Height - d, d, d, 90, 90);
                 path.CloseFigure();
-
                 control.Region = new Region(path);
             }
         }

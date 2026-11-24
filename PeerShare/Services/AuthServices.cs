@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net.Mail;
@@ -9,11 +8,9 @@ namespace PeerShare.Services
 {
     public static class AuthService
     {
-        private const string ConnectionString =
-            @"Data Source=.\SQLEXPRESS;" +
-            "Initial Catalog=PeerShareDB;" +
-            "Integrated Security=True;" +
-            "TrustServerCertificate=True;";
+        // ==========================================
+        // REGISTER ACCOUNT
+        // ==========================================
 
         public static string Register(
             string username,
@@ -56,40 +53,32 @@ namespace PeerShare.Services
             if (password != confirmPassword)
                 return "Passwords do not match.";
 
-            using (var db = new PeerShareDataContext(ConnectionString))
+            // Hash password before saving to SQL Server.
+            string passwordHash =
+                PasswordHasher.HashPassword(password);
+
+            using (var db = new PeerShareDataContext())
             {
-                bool usernameExists = db.Users.Any(
-                    u => u.Username == username);
-
-                if (usernameExists)
-                    return "Username is already taken.";
-
-                bool emailExists = db.Users.Any(
-                    u => u.Email == email);
-
-                if (emailExists)
-                    return "Email is already registered.";
-
-                var newUser = new User
-                {
-                    Username = username,
-                    Email = email,
-                    PasswordHash =
-                        PasswordHasher.HashPassword(password),
-                    CreatedAt = DateTime.Now
-                };
-
-                db.Users.InsertOnSubmit(newUser);
-
                 try
                 {
-                    db.SubmitChanges();
+                    db.usp_User_Register(
+                        username,
+                        email,
+                        passwordHash
+                    );
+
                     return "SUCCESS";
                 }
                 catch (SqlException ex)
                 {
-                    // SQL Server unique constraint violation.
-                    if (ex.Number == 2601 || ex.Number == 2627)
+                    if (ex.Number == 50001)
+                        return "Username is already taken.";
+
+                    if (ex.Number == 50002)
+                        return "Email is already registered.";
+
+                    if (ex.Number == 2601 ||
+                        ex.Number == 2627)
                         return "Username or email is already registered.";
 
                     throw;
@@ -97,21 +86,27 @@ namespace PeerShare.Services
             }
         }
 
+        // ==========================================
+        // LOGIN ACCOUNT
+        // ==========================================
+
         public static User Login(
             string usernameOrEmail,
             string password)
         {
-            string identifier = (usernameOrEmail ?? "").Trim();
+            string identifier =
+                (usernameOrEmail ?? "").Trim();
 
             if (identifier.Length == 0 ||
-                string.IsNullOrEmpty(password))
+                identifier.Length > 100 ||
+                string.IsNullOrEmpty(password) ||
+                password.Length > 128)
                 return null;
 
-            using (var db = new PeerShareDataContext(ConnectionString))
+            using (var db = new PeerShareDataContext())
             {
-                var user = db.Users.FirstOrDefault(
-                    u => u.Username == identifier ||
-                         u.Email == identifier);
+                var user = db.usp_User_GetByLogin(identifier)
+                    .FirstOrDefault();
 
                 if (user == null)
                     return null;
@@ -120,7 +115,8 @@ namespace PeerShare.Services
                     password, user.PasswordHash))
                     return null;
 
-                // Return a detached copy of the account details.
+                // Convert stored procedure result
+                // into our existing User entity.
                 return new User
                 {
                     UserId = user.UserId,
@@ -131,9 +127,13 @@ namespace PeerShare.Services
             }
         }
 
+        // ==========================================
+        // TEST DATABASE CONNECTION
+        // ==========================================
+
         public static bool TestConnection()
         {
-            using (var db = new PeerShareDataContext(ConnectionString))
+            using (var db = new PeerShareDataContext())
             {
                 db.Connection.Open();
                 return true;

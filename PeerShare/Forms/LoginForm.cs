@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Windows.Forms;
+using PeerShare.Services;
 
 namespace PeerShare
 {
@@ -15,6 +16,87 @@ namespace PeerShare
             LoadBookImage();
 
             RoundPanelCorners(loginCard, 25);
+
+            btnLogin.Click += btnLogin_Click;
+
+
+        }
+        private void ClearLoginFields()
+        {
+            txtUsername.Clear();
+            txtPassword.Clear();
+
+            txtUsername.Focus();
+        }
+        private void btnLogin_Click(object sender, EventArgs e)
+        {
+            string username = txtUsername.Text.Trim();
+            string password = txtPassword.Text;
+
+            if (string.IsNullOrWhiteSpace(username) ||
+                string.IsNullOrWhiteSpace(password))
+            {
+                MessageBox.Show(
+                    "Please enter your username and password.",
+                    "Missing Information",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
+                return;
+            }
+
+            try
+            {
+                var user = AuthService.Login(username, password);
+
+                if (user == null)
+                {
+                    MessageBox.Show(
+                        "Invalid username or password.",
+                        "Login Failed",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+
+                    txtPassword.Clear();
+                    txtPassword.Focus();
+
+                    return;
+                }
+
+                SessionService.StartSession(
+                    user.UserId,
+                    user.Username,
+                    user.Email
+                );
+
+                txtPassword.Clear();
+
+                this.Hide();
+
+                try
+                {
+                    using (DashboardForm dashboard = new DashboardForm())
+                    {
+                        dashboard.ShowDialog();
+                    }
+                }
+                finally
+                {
+                    SessionService.EndSession();
+
+                    this.Show();
+
+                    ClearLoginFields();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Login error: " + ex.Message,
+                    "System Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
         // =====================================

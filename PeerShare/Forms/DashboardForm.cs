@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using PeerShare.Services;
 namespace PeerShare
 {
     public partial class DashboardForm : Form
@@ -32,8 +33,8 @@ namespace PeerShare
 
             ApplyDashboardRoundedCorners();
 
-            LoadRecentUploads();
             ConnectNavigation();
+            LoadDashboardData();
         }
 
         // 3 - NAVIGATION EVENTS
@@ -49,46 +50,28 @@ namespace PeerShare
             sidebarPanel.Paint += sidebarPanel_Paint;
         }
 
-        // 4 - RECENT UPLOADS
+        // 4 - DASHBOARD DATA
+        private void LoadDashboardData()
+        {
+            greetingLabel.Text = "Hello, " + SessionService.Username + "! ✨";
+            profileNameLabel.Text = SessionService.Username;
+            profileRoleLabel.Text = "PeerShare Member";
+
+            int[] statistics = ResourceService.GetDashboardStatistics();
+            totalValue.Text = statistics[0].ToString();
+            resourcesValue.Text = statistics[1].ToString();
+            availableValue.Text = statistics[2].ToString();
+
+            LoadRecentUploads();
+        }
+
         private void LoadRecentUploads()
         {
             recentUploadsListView.Items.Clear();
-
-            recentUploadsListView.Items.Add(
-                new ListViewItem(new string[]
-                {
-                    "Introduction to Programming.pdf",
-                    "Programming",
-                    "John Doe",
-                    "Nov 20, 2026"
-                }));
-
-            recentUploadsListView.Items.Add(
-                new ListViewItem(new string[]
-                {
-                    "Database Fundamentals.pdf",
-                    "Database",
-                    "Jane Smith",
-                    "Nov 19, 2026"
-                }));
-
-            recentUploadsListView.Items.Add(
-                new ListViewItem(new string[]
-                {
-                    "Networking Basics.pdf",
-                    "Networking",
-                    "Alex Cruz",
-                    "Nov 18, 2026"
-                }));
-
-            recentUploadsListView.Items.Add(
-                new ListViewItem(new string[]
-                {
-                    "Web Development Notes.pdf",
-                    "Web Development",
-                    "Sam Lee",
-                    "Nov 17, 2026"
-                }));
+            foreach (string[] resource in ResourceService.GetRecentUploads())
+            {
+                recentUploadsListView.Items.Add(new ListViewItem(resource));
+            }
         }
 
         // 5 - OPEN CHILD FORMS
@@ -142,6 +125,8 @@ namespace PeerShare
             headerPanel.BringToFront();
             statsPanel.BringToFront();
             recentPanel.BringToFront();
+
+            LoadDashboardData();
         }
 
         // 7 - NAVIGATION BUTTON METHODS
@@ -173,10 +158,9 @@ namespace PeerShare
         // 8 - LOGOUT
         private void logoutButton_Click(object sender, EventArgs e)
         {
-            LoginForm loginForm = new LoginForm();
-            loginForm.Show();
-
+            SessionService.EndSession();
             this.Close();
+            
         }
 
         // 9 - SIDEBAR GRADIENT
