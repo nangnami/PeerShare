@@ -15,6 +15,16 @@ namespace PeerShare
         {
             InitializeComponent();
 
+            typeof(Panel).InvokeMember(
+                "DoubleBuffered",
+                System.Reflection.BindingFlags.SetProperty |
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic,
+                null,
+                contentPanel,
+                new object[] { true }
+            );
+
             fairyPictureBox.Image = Image.FromFile(
                 Application.StartupPath + @"\Assets\fairy.png"
             );
@@ -40,6 +50,11 @@ namespace PeerShare
         // 3 - NAVIGATION EVENTS
         private void ConnectNavigation()
         {
+            profileIconLabel.Click += profileButton_Click;
+            profileNameLabel.Click += profileButton_Click;
+
+            profileIconLabel.Cursor = Cursors.Hand;
+            profileNameLabel.Cursor = Cursors.Hand;
             homeButton.Click += homeButton_Click;
             uploadButton.Click += uploadButton_Click;
             myUploadsButton.Click += myUploadsButton_Click;
@@ -81,29 +96,27 @@ namespace PeerShare
 
             Form previousChild = activeChildForm;
 
-            // Prepare the new child form
             childForm.TopLevel = false;
             childForm.FormBorderStyle = FormBorderStyle.None;
             childForm.Dock = DockStyle.Fill;
 
-            // Add and display the new page
-            activeChildForm = childForm;
             contentPanel.Controls.Add(childForm);
 
             headerPanel.Visible = false;
             statsPanel.Visible = false;
             recentPanel.Visible = false;
 
-            childForm.BringToFront();
             childForm.Show();
+            childForm.BringToFront();
 
-            // Close the previous page
             if (previousChild != null)
             {
                 contentPanel.Controls.Remove(previousChild);
                 previousChild.Close();
                 previousChild.Dispose();
             }
+
+            activeChildForm = childForm;
 
             contentPanel.ResumeLayout(true);
         }
@@ -153,6 +166,11 @@ namespace PeerShare
         private void aboutButton_Click(object sender, EventArgs e)
         {
             OpenChildForm(new AboutUsForm());
+        }
+
+        private void profileButton_Click(object sender, EventArgs e)
+        {
+            OpenChildForm(new ProfileForm());
         }
 
         // 8 - LOGOUT
@@ -242,5 +260,7 @@ namespace PeerShare
                 control.Region = new Region(path);
             }
         }
+
+
     }
 }
