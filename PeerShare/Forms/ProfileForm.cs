@@ -1,33 +1,31 @@
-﻿
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using PeerShare.Services;
 
 namespace PeerShare
 {
     public partial class ProfileForm : Form
     {
-        // 1 - CONSTRUCTOR
         public ProfileForm()
         {
             InitializeComponent();
+            SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+            BackColor = Color.Transparent;
+            usernameTextBox.MaxLength = 50;
+            emailTextBox.MaxLength = 100;
+            currentPasswordTextBox.MaxLength = 128;
+            newPasswordTextBox.MaxLength = 128;
+            confirmPasswordTextBox.MaxLength = 128;
+            passwordOverlayPanel.Visible = false;
 
-            // SHARED DASHBOARD BACKGROUND
-            this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
-            this.BackColor = Color.Transparent;
-
-            // FLOWER DECORATION
             if (LicenseManager.UsageMode != LicenseUsageMode.Designtime)
             {
-                string flowerPath = Application.StartupPath +
-                    @"\Assets\flower.png";
-
+                string flowerPath = Application.StartupPath + @"\Assets\flower.png";
                 if (System.IO.File.Exists(flowerPath))
-                {
                     flowerPictureBox.Image = Image.FromFile(flowerPath);
-                }
 
                 ApplyRoundedCorners(profilePagePanel, 20);
                 ApplyRoundedCorners(profileCard, 18);
@@ -35,12 +33,11 @@ namespace PeerShare
                 ApplyRoundedCorners(changePasswordButton, 12);
                 ApplyRoundedCorners(cancelButton, 12);
                 ApplyRoundedCorners(saveChangesButton, 12);
+                ConnectEvents();
+                Load += (sender, e) => LoadProfile();
             }
-
-            ConnectEvents();
         }
 
-        // 2 - BUTTON EVENTS
         private void ConnectEvents()
         {
             cancelPasswordButton.Click += cancelPasswordButton_Click;
@@ -50,136 +47,116 @@ namespace PeerShare
             changePasswordButton.Click += changePasswordButton_Click;
         }
 
-        // 3 - SAVE PROFILE
+        private void LoadProfile()
+        {
+            try
+            {
+                string[] profile = ProfileService.GetProfile();
+                usernameTextBox.Text = profile[0];
+                emailTextBox.Text = profile[1];
+                profileNameLabel.Text = profile[0];
+                profileRoleLabel.Text = "PeerShare Member";
+                SessionService.UpdateProfile(profile[0], profile[1]);
+                saveChangesButton.Enabled = true;
+                changePasswordButton.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                saveChangesButton.Enabled = false;
+                changePasswordButton.Enabled = false;
+                MessageBox.Show("Unable to load profile: " + ex.Message,
+                    "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void saveChangesButton_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(usernameTextBox.Text) ||
-                string.IsNullOrWhiteSpace(fullNameTextBox.Text) ||
-                string.IsNullOrWhiteSpace(emailTextBox.Text))
+            try
             {
-                MessageBox.Show(
-                    "Please complete all personal information fields.",
-                    "Incomplete Information",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                return;
+                saveChangesButton.Enabled = false;
+                string result = ProfileService.UpdateProfile(
+                    usernameTextBox.Text, emailTextBox.Text);
+                if (result == "SUCCESS")
+                {
+                    usernameTextBox.Text = SessionService.Username;
+                    emailTextBox.Text = SessionService.Email;
+                    profileNameLabel.Text = SessionService.Username;
+                    MessageBox.Show("Profile updated successfully!", "Profile Updated",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    MessageBox.Show(result, "Update Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-
-            MessageBox.Show(
-                "Your profile information has been validated.\n\n" +
-                "Saving to your account will be available after database integration.",
-                "Profile Information",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
-
-            profileNameLabel.Text = fullNameTextBox.Text.Trim();
+            catch (Exception ex)
+            {
+                MessageBox.Show("Unable to update profile: " + ex.Message,
+                    "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally { saveChangesButton.Enabled = true; }
         }
 
-        // 4 - CANCEL
         private void cancelButton_Click(object sender, EventArgs e)
         {
-            usernameTextBox.Clear();
-            fullNameTextBox.Clear();
-            emailTextBox.Clear();
-
-            MessageBox.Show(
-                "Changes have been cleared.",
-                "Profile",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
+            LoadProfile();
         }
 
-        // 5 - CHANGE PASSWORD
         private void changePasswordButton_Click(object sender, EventArgs e)
         {
-            currentPasswordTextBox.Clear();
-            newPasswordTextBox.Clear();
-            confirmPasswordTextBox.Clear();
-
+            ClearPasswordFields();
             passwordOverlayPanel.Visible = true;
             passwordOverlayPanel.BringToFront();
-
             currentPasswordTextBox.Focus();
         }
 
         private void cancelPasswordButton_Click(object sender, EventArgs e)
         {
+            ClearPasswordFields();
             passwordOverlayPanel.Visible = false;
         }
 
         private void savePasswordButton_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(currentPasswordTextBox.Text) ||
-                string.IsNullOrWhiteSpace(newPasswordTextBox.Text) ||
-                string.IsNullOrWhiteSpace(confirmPasswordTextBox.Text))
+            try
             {
-                MessageBox.Show(
-                    "Please complete all password fields.",
-                    "Incomplete Information",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                return;
+                savePasswordButton.Enabled = false;
+                string result = ProfileService.ChangePassword(currentPasswordTextBox.Text,
+                    newPasswordTextBox.Text, confirmPasswordTextBox.Text);
+                if (result == "SUCCESS")
+                {
+                    ClearPasswordFields();
+                    passwordOverlayPanel.Visible = false;
+                    MessageBox.Show("Password changed successfully!", "Password Updated",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    MessageBox.Show(result, "Password Change Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-
-            if (newPasswordTextBox.Text.Length < 8)
+            catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Your new password must contain at least 8 characters.",
-                    "Invalid Password",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                return;
+                MessageBox.Show("Unable to change password: " + ex.Message,
+                    "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            if (newPasswordTextBox.Text != confirmPasswordTextBox.Text)
-            {
-                MessageBox.Show(
-                    "Your new passwords do not match.",
-                    "Password Mismatch",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                return;
-            }
-
-            MessageBox.Show(
-                "Password fields validated successfully.\n\n" +
-                "Actual password updating will be connected to the backend.",
-                "PeerShare",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
+            finally { savePasswordButton.Enabled = true; }
         }
 
-        // 6 - ROUNDED CORNERS
+        private void ClearPasswordFields()
+        {
+            currentPasswordTextBox.Clear();
+            newPasswordTextBox.Clear();
+            confirmPasswordTextBox.Clear();
+        }
+
         private void ApplyRoundedCorners(Control control, int radius)
         {
             using (GraphicsPath path = new GraphicsPath())
             {
                 int diameter = radius * 2;
-
-                Rectangle bounds = new Rectangle(
-                    0, 0,
-                    control.Width,
-                    control.Height
-                );
-
+                Rectangle bounds = new Rectangle(0, 0, control.Width, control.Height);
                 path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
                 path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
                 path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
                 path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-
                 path.CloseFigure();
-
                 control.Region = new Region(path);
             }
         }

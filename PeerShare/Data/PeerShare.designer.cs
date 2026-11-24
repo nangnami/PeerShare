@@ -189,6 +189,34 @@ namespace PeerShare.Data
 			IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), userId);
 			return ((ISingleResult<usp_Dashboard_GetStatisticsResult>)(result.ReturnValue));
 		}
+		
+		[global::System.Data.Linq.Mapping.FunctionAttribute(Name="dbo.usp_User_GetPasswordHash")]
+		public ISingleResult<usp_User_GetPasswordHashResult> usp_User_GetPasswordHash([global::System.Data.Linq.Mapping.ParameterAttribute(Name="UserId", DbType="Int")] System.Nullable<int> userId)
+		{
+			IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), userId);
+			return ((ISingleResult<usp_User_GetPasswordHashResult>)(result.ReturnValue));
+		}
+		
+		[global::System.Data.Linq.Mapping.FunctionAttribute(Name="dbo.usp_User_ChangePassword")]
+		public int usp_User_ChangePassword([global::System.Data.Linq.Mapping.ParameterAttribute(Name="UserId", DbType="Int")] System.Nullable<int> userId, [global::System.Data.Linq.Mapping.ParameterAttribute(Name="CurrentPasswordHash", DbType="NVarChar(255)")] string currentPasswordHash, [global::System.Data.Linq.Mapping.ParameterAttribute(Name="NewPasswordHash", DbType="NVarChar(255)")] string newPasswordHash)
+		{
+			IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), userId, currentPasswordHash, newPasswordHash);
+			return ((int)(result.ReturnValue));
+		}
+		
+		[global::System.Data.Linq.Mapping.FunctionAttribute(Name="dbo.usp_User_GetProfile")]
+		public ISingleResult<usp_User_GetProfileResult> usp_User_GetProfile([global::System.Data.Linq.Mapping.ParameterAttribute(Name="UserId", DbType="Int")] System.Nullable<int> userId)
+		{
+			IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), userId);
+			return ((ISingleResult<usp_User_GetProfileResult>)(result.ReturnValue));
+		}
+		
+		[global::System.Data.Linq.Mapping.FunctionAttribute(Name="dbo.usp_User_UpdateProfile")]
+		public int usp_User_UpdateProfile([global::System.Data.Linq.Mapping.ParameterAttribute(Name="UserId", DbType="Int")] System.Nullable<int> userId, [global::System.Data.Linq.Mapping.ParameterAttribute(Name="Username", DbType="NVarChar(50)")] string username, [global::System.Data.Linq.Mapping.ParameterAttribute(Name="Email", DbType="NVarChar(100)")] string email)
+		{
+			IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), userId, username, email);
+			return ((int)(result.ReturnValue));
+		}
 	}
 	
 	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.Users")]
@@ -1780,6 +1808,112 @@ namespace PeerShare.Data
 				if ((this._AvailableResources != value))
 				{
 					this._AvailableResources = value;
+				}
+			}
+		}
+	}
+	
+	public partial class usp_User_GetPasswordHashResult
+	{
+		
+		private string _PasswordHash;
+		
+		public usp_User_GetPasswordHashResult()
+		{
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_PasswordHash", DbType="NVarChar(255) NOT NULL", CanBeNull=false)]
+		public string PasswordHash
+		{
+			get
+			{
+				return this._PasswordHash;
+			}
+			set
+			{
+				if ((this._PasswordHash != value))
+				{
+					this._PasswordHash = value;
+				}
+			}
+		}
+	}
+	
+	public partial class usp_User_GetProfileResult
+	{
+		
+		private int _UserId;
+		
+		private string _Username;
+		
+		private string _Email;
+		
+		private System.DateTime _CreatedAt;
+		
+		public usp_User_GetProfileResult()
+		{
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_UserId", DbType="Int NOT NULL")]
+		public int UserId
+		{
+			get
+			{
+				return this._UserId;
+			}
+			set
+			{
+				if ((this._UserId != value))
+				{
+					this._UserId = value;
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Username", DbType="NVarChar(50) NOT NULL", CanBeNull=false)]
+		public string Username
+		{
+			get
+			{
+				return this._Username;
+			}
+			set
+			{
+				if ((this._Username != value))
+				{
+					this._Username = value;
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Email", DbType="NVarChar(100) NOT NULL", CanBeNull=false)]
+		public string Email
+		{
+			get
+			{
+				return this._Email;
+			}
+			set
+			{
+				if ((this._Email != value))
+				{
+					this._Email = value;
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_CreatedAt", DbType="DateTime2 NOT NULL")]
+		public System.DateTime CreatedAt
+		{
+			get
+			{
+				return this._CreatedAt;
+			}
+			set
+			{
+				if ((this._CreatedAt != value))
+				{
+					this._CreatedAt = value;
 				}
 			}
 		}

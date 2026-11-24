@@ -21,8 +21,6 @@ namespace PeerShare
         private Label personalInfoLabel;
         private Label usernameLabel;
         private TextBox usernameTextBox;
-        private Label fullNameLabel;
-        private TextBox fullNameTextBox;
         private Label emailLabel;
         private TextBox emailTextBox;
 
@@ -73,8 +71,6 @@ namespace PeerShare
             this.personalInfoLabel = new Label();
             this.usernameLabel = new Label();
             this.usernameTextBox = new TextBox();
-            this.fullNameLabel = new Label();
-            this.fullNameTextBox = new TextBox();
             this.emailLabel = new Label();
             this.emailTextBox = new TextBox();
 
@@ -157,7 +153,7 @@ namespace PeerShare
             this.profileNameLabel.ForeColor = Color.FromArgb(93, 70, 112);
             this.profileNameLabel.Location = new Point(85, 17);
             this.profileNameLabel.Size = new Size(300, 27);
-            this.profileNameLabel.Text = "Student Name";
+            this.profileNameLabel.Text = "Username";
 
             // PROFILE ROLE
             this.profileRoleLabel.Font = new Font("Segoe UI", 8.5F);
@@ -182,20 +178,8 @@ namespace PeerShare
 
             this.usernameTextBox.Font = new Font("Segoe UI", 9F);
             this.usernameTextBox.Location = new Point(35, 270);
-            this.usernameTextBox.Size = new Size(280, 30);
+            this.usernameTextBox.Size = new Size(590, 30);
             this.usernameTextBox.BorderStyle = BorderStyle.FixedSingle;
-
-            // FULL NAME
-            this.fullNameLabel.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-            this.fullNameLabel.ForeColor = Color.FromArgb(105, 76, 130);
-            this.fullNameLabel.Location = new Point(345, 248);
-            this.fullNameLabel.Size = new Size(250, 20);
-            this.fullNameLabel.Text = "Full Name";
-
-            this.fullNameTextBox.Font = new Font("Segoe UI", 9F);
-            this.fullNameTextBox.Location = new Point(345, 270);
-            this.fullNameTextBox.Size = new Size(280, 30);
-            this.fullNameTextBox.BorderStyle = BorderStyle.FixedSingle;
 
             // EMAIL ADDRESS
             this.emailLabel.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
@@ -264,8 +248,6 @@ namespace PeerShare
             this.profilePagePanel.Controls.Add(this.personalInfoLabel);
             this.profilePagePanel.Controls.Add(this.usernameLabel);
             this.profilePagePanel.Controls.Add(this.usernameTextBox);
-            this.profilePagePanel.Controls.Add(this.fullNameLabel);
-            this.profilePagePanel.Controls.Add(this.fullNameTextBox);
             this.profilePagePanel.Controls.Add(this.emailLabel);
             this.profilePagePanel.Controls.Add(this.emailTextBox);
             this.profilePagePanel.Controls.Add(this.securityLabel);
@@ -375,26 +357,7 @@ namespace PeerShare
 
             this.passwordOverlayPanel.Controls.Add(this.passwordDialogPanel);
 
-            // ROUNDED DIALOG
-            using (GraphicsPath path = new GraphicsPath())
-            {
-                int radius = 20;
-                int diameter = radius * 2;
-
-                Rectangle bounds = new Rectangle(
-                    0, 0,
-                    this.passwordDialogPanel.Width,
-                    this.passwordDialogPanel.Height
-                );
-
-                path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
-                path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
-                path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
-                path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-                path.CloseFigure();
-
-                this.passwordDialogPanel.Region = new Region(path);
-            }
+            
 
             // ADD OVERLAY TO FORM
             this.profilePagePanel.Controls.Add(this.passwordOverlayPanel);
