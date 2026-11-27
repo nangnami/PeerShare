@@ -1,7 +1,9 @@
-﻿using System;
+﻿
+using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
 namespace PeerShare
@@ -19,43 +21,70 @@ namespace PeerShare
             Size = new Size(900, 700);
             MinimumSize = new Size(500, 400);
             BackColor = Color.FromArgb(255, 249, 240);
-            folder = Path.Combine(Path.GetTempPath(), "PeerShare-" + Guid.NewGuid().ToString("N"));
+
+            folder = Path.Combine(
+                Path.GetTempPath(),
+                "PeerShare-" + Guid.NewGuid().ToString("N"));
+
             pdfPath = Path.Combine(folder, "preview.pdf");
-            viewer = new WebView2 { Dock = DockStyle.Fill };
+
+            viewer = new WebView2
+            {
+                Dock = DockStyle.Fill
+            };
+
             Controls.Add(viewer);
+
             try
             {
                 Directory.CreateDirectory(folder);
-                string extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+                string extension = Path.GetExtension(fileName)
+                    .ToLowerInvariant();
+
                 if (extension == ".pdf")
                 {
                     File.WriteAllBytes(pdfPath, bytes);
                 }
-                else if (extension == ".doc" || extension == ".docx" ||
-                         extension == ".ppt" || extension == ".pptx")
+                else if (extension == ".doc" ||
+                         extension == ".docx" ||
+                         extension == ".ppt" ||
+                         extension == ".pptx")
                 {
-                    string inputPath = Path.Combine(folder, "source" + extension);
+                    string inputPath = Path.Combine(
+                        folder, "source" + extension);
+
                     File.WriteAllBytes(inputPath, bytes);
-                    if (extension == ".doc" || extension == ".docx")
+
+                    if (extension == ".doc" ||
+                        extension == ".docx")
                     {
                         using (var document = new Spire.Doc.Document())
                         {
                             document.LoadFromFile(inputPath);
-                            document.SaveToFile(pdfPath, Spire.Doc.FileFormat.PDF);
+
+                            document.SaveToFile(
+                                pdfPath,
+                                Spire.Doc.FileFormat.PDF);
                         }
                     }
                     else
                     {
-                        using (var presentation = new Spire.Presentation.Presentation())
+                        using (var presentation =
+                            new Spire.Presentation.Presentation())
                         {
                             presentation.LoadFromFile(inputPath);
-                            presentation.SaveToFile(pdfPath, Spire.Presentation.FileFormat.PDF);
+
+                            presentation.SaveToFile(
+                                pdfPath,
+                                Spire.Presentation.FileFormat.PDF);
                         }
                     }
                 }
                 else
                 {
-                    throw new NotSupportedException("This file format is not supported for preview.");
+                    throw new NotSupportedException(
+                        "This file format is not supported for preview.");
                 }
             }
             catch
@@ -63,6 +92,7 @@ namespace PeerShare
                 Dispose();
                 throw;
             }
+
             Shown += PreviewShown;
         }
 
@@ -70,37 +100,93 @@ namespace PeerShare
         {
             try
             {
-                await viewer.EnsureCoreWebView2Async();
-                if (IsDisposed || Disposing) return;
+                // Use a writable folder for WebView2.
+                string userDataFolder = Path.Combine(
+                    Environment.GetFolderPath(
+                        Environment.SpecialFolder.LocalApplicationData),
+                    "PeerShare",
+                    "WebView2");
+
+                Directory.CreateDirectory(userDataFolder);
+
+                var environment =
+                    await CoreWebView2Environment.CreateAsync(
+                        null,
+                        userDataFolder);
+
+                if (IsDisposed || Disposing)
+                    return;
+
+                await viewer.EnsureCoreWebView2Async(environment);
+
+                if (IsDisposed || Disposing)
+                    return;
+
                 viewer.CoreWebView2.Settings.IsScriptEnabled = false;
+
                 viewer.CoreWebView2.Settings.AreDevToolsEnabled = false;
-                viewer.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+
+                viewer.CoreWebView2.Settings
+                    .AreDefaultContextMenusEnabled = false;
+
                 string uri = new Uri(pdfPath).AbsoluteUri;
+
                 viewer.CoreWebView2.NavigationStarting += (s, args) =>
                 {
-                    if (!string.Equals(args.Uri, uri, StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(
+                        args.Uri,
+                        uri,
+                        StringComparison.OrdinalIgnoreCase))
+                    {
                         args.Cancel = true;
+                    }
                 };
-                viewer.CoreWebView2.NewWindowRequested += (s, args) => args.Handled = true;
-                viewer.CoreWebView2.DownloadStarting += (s, args) => args.Cancel = true;
+
+                viewer.CoreWebView2.NewWindowRequested += (s, args) =>
+                {
+                    args.Handled = true;
+                };
+
+                viewer.CoreWebView2.DownloadStarting += (s, args) =>
+                {
+                    args.Cancel = true;
+                };
+
                 viewer.Source = new Uri(pdfPath);
             }
             catch (Exception ex)
             {
-                if (IsDisposed || Disposing) return;
-                MessageBox.Show(this, "Unable to open PDF preview. Check that WebView2 Runtime is installed.\n\n" + ex.Message,
-                    "Preview Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (IsDisposed || Disposing)
+                    return;
+
+                MessageBox.Show(
+                    this,
+                    "Unable to open the document preview.\n\n" +
+                    "Please check that Microsoft Edge WebView2 " +
+                    "Runtime is installed and accessible.\n\n" +
+                    ex.Message,
+                    "Preview Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
                 Close();
             }
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && viewer != null) viewer.Dispose();
+            if (disposing && viewer != null)
+                viewer.Dispose();
+
             base.Dispose(disposing);
+
             if (disposing && folder != null)
             {
-                try { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
+                try
+                {
+                    if (Directory.Exists(folder))
+                        Directory.Delete(folder, true);
+                }
                 catch (IOException) { }
                 catch (UnauthorizedAccessException) { }
             }
